@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/juicyluv/astral/internal/model"
@@ -22,18 +24,40 @@ func NewPostRepository(db *pgx.Conn, logger *zap.SugaredLogger) *PostRepository 
 
 func (r *PostRepository) Create(ctx context.Context, post *model.Post) (int, error) {
 	query := `
-	INSERT INTO posts(title, subtitle, author_id) 
+	INSERT INTO posts(title, content, author_id) 
 	VALUES($1, $2, $3)
 	RETURNING post_id`
 
-	err := r.db.QueryRow(
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	err = tx.QueryRow(
 		ctx,
 		query,
 		post.Title,
-		post.Subtitle,
+		post.Content,
 		post.Author.Id,
 	).Scan(&post.Id)
 
+	if err != nil {
+		if err = tx.Rollback(ctx); err != nil {
+			return 0, err
+		}
+		return 0, err
+	}
+
+	query = `INSERT INTO user_post VALUES ($1, $2)`
+	_, err = tx.Exec(ctx, query, post.Author.Id, post.Id)
+	if err != nil {
+		if err = tx.Rollback(ctx); err != nil {
+			return 0, err
+		}
+		return 0, err
+	}
+
+	err = tx.Commit(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -46,10 +70,10 @@ func (r *PostRepository) FindAll(ctx context.Context) ([]model.Post, error) {
 
 	query := `
 	SELECT 
-	p.post_id, p.title, p.subtitle, 
+	p.post_id, p.title, p.content, 
 	TO_CHAR(p.created_at, 'DD-MM-YYYY') as created_at, 
 	TO_CHAR(p.updated_at, 'DD-MM-YYYY') as updated_at, 
-	u.user_id, u.username, 
+	u.user_id, u.username 
 	FROM posts p
 	INNER JOIN users u 
 	ON u.user_id = p.author_id`
@@ -65,7 +89,7 @@ func (r *PostRepository) FindAll(ctx context.Context) ([]model.Post, error) {
 		err := rows.Scan(
 			&post.Id,
 			&post.Title,
-			&post.Subtitle,
+			&post.Content,
 			&post.CreatedAt,
 			&post.UpdatedAt,
 			&post.Author.Id,
@@ -80,16 +104,29 @@ func (r *PostRepository) FindAll(ctx context.Context) ([]model.Post, error) {
 	return posts, nil
 }
 
-func (r *PostRepository) FindById(ctx context.Context, userId int) (*model.Post, error) {
+func (r *PostRepository) FindById(ctx context.Context, postId int) (*model.Post, error) {
 	var post model.Post
 
 	query := `
-	SELECT user_id, username, email, 
-	TO_CHAR(registered_at, 'DD-MM-YYYY') as registered_at
-	FROM users
-	WHERE user_id = $1`
+	SELECT 
+	p.post_id, p.title, p.content, 
+	TO_CHAR(p.created_at, 'DD-MM-YYYY') as created_at, 
+	TO_CHAR(p.updated_at, 'DD-MM-YYYY') as updated_at, 
+	u.user_id, u.username 
+	FROM posts p
+	INNER JOIN users u 
+	ON u.user_id = p.author_id
+	WHERE post_id = $1`
 
-	err := r.db.QueryRow(ctx, query, userId).Scan()
+	err := r.db.QueryRow(ctx, query, postId).Scan(
+		&post.Id,
+		&post.Title,
+		&post.Content,
+		&post.CreatedAt,
+		&post.UpdatedAt,
+		&post.Author.Id,
+		&post.Author.Username,
+	)
 
 	if err != nil {
 		return nil, err
@@ -98,32 +135,41 @@ func (r *PostRepository) FindById(ctx context.Context, userId int) (*model.Post,
 	return &post, nil
 }
 
-func (r *PostRepository) FindByEmail(ctx context.Context, email string) (*model.Post, error) {
-	var post model.Post
+func (r *PostRepository) Update(ctx context.Context, postId int, post *model.UpdatePostDto) error {
+	values := make([]string, 0)
+	args := make([]interface{}, 0)
+	argId := 1
 
-	query := `
-	SELECT user_id, username, email, 
-	TO_CHAR(registered_at, 'DD-MM-YYYY') as registered_at
-	FROM users
-	WHERE email = $1`
-
-	err := r.db.QueryRow(ctx, query, email).Scan()
-
-	if err != nil {
-		return nil, err
+	if post.Title != nil {
+		values = append(values, fmt.Sprintf("title=$%d", argId))
+		args = append(args, *post.Title)
+		argId++
 	}
 
-	return &post, nil
-}
+	if post.Content != nil {
+		values = append(values, fmt.Sprintf("content=$%d", argId))
+		args = append(args, *post.Content)
+		argId++
+	}
 
-func (r *PostRepository) Update(ctx context.Context, user *model.UpdatePostDto) error {
-	return nil
+	if post.AuthorId != nil {
+		values = append(values, fmt.Sprintf("author_id=$%d", argId))
+		args = append(args, *post.AuthorId)
+		argId++
+	}
+
+	valuesQuery := strings.Join(values, ", ")
+	query := fmt.Sprintf("UPDATE posts SET %s WHERE post_id = $%d", valuesQuery, argId)
+	args = append(args, postId)
+
+	_, err := r.db.Exec(ctx, query, args...)
+	return err
 }
 
 func (r *PostRepository) Delete(ctx context.Context, postId int) error {
 	query := `
-	DELETE FROM users
-	WHERE user_id = $1`
+	DELETE FROM posts
+	WHERE post_id = $1`
 
 	_, err := r.db.Exec(ctx, query, postId)
 	if err != nil {
