@@ -3,6 +3,9 @@ package handler
 import "net/http"
 
 func (h *Handler) initRoutes() {
+	h.router.NotFound = http.HandlerFunc(h.notFoundResponse)
+	h.router.MethodNotAllowed = http.HandlerFunc(h.methodNotAllowedResponse)
+
 	h.router.HandlerFunc(http.MethodGet, "/api/health", h.health)
 
 	h.router.HandlerFunc(http.MethodPost, "/api/user", h.createUser)
