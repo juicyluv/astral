@@ -11,9 +11,15 @@ import (
 
 func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 	var user model.User
+
 	err := readJSON(w, r, &user)
 	if err != nil {
 		h.errorResponse(w, r, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+
+	if err = user.Validate(); err != nil {
+		h.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -26,7 +32,10 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendJSON(w, jsonResponse{"id": userId}, http.StatusOK, nil)
+	err = sendJSON(w, jsonResponse{"id": userId}, http.StatusOK, nil)
+	if err != nil {
+		h.internalErrorResponse(w, r, err)
+	}
 }
 
 func (h *Handler) listUser(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +52,10 @@ func (h *Handler) listUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendJSON(w, users, http.StatusOK, nil)
+	err = sendJSON(w, users, http.StatusOK, nil)
+	if err != nil {
+		h.internalErrorResponse(w, r, err)
+	}
 }
 
 func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +78,10 @@ func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendJSON(w, user, http.StatusOK, nil)
+	err = sendJSON(w, user, http.StatusOK, nil)
+	if err != nil {
+		h.internalErrorResponse(w, r, err)
+	}
 }
 
 func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +94,19 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.store.User().Delete(ctx, int(userId))
+	var user model.UpdateUserDto
+
+	if err := readJSON(w, r, &user); err != nil {
+		h.invalidRequestBodyResponse(w, r)
+		return
+	}
+
+	if err := user.Validate(); err != nil {
+		h.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = h.store.User().Update(ctx, int(userId), &user)
 	if err != nil {
 		if errors.Is(err, errNoRows) {
 			h.recordNotFoundResponse(w, r)
@@ -89,7 +116,10 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendJSON(w, nil, http.StatusOK, nil)
+	err = sendJSON(w, nil, http.StatusOK, nil)
+	if err != nil {
+		h.internalErrorResponse(w, r, err)
+	}
 }
 
 func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
@@ -112,5 +142,8 @@ func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendJSON(w, nil, http.StatusOK, nil)
+	err = sendJSON(w, nil, http.StatusOK, nil)
+	if err != nil {
+		h.internalErrorResponse(w, r, err)
+	}
 }
