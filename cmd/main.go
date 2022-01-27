@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/juicyluv/astral/configs"
 	"github.com/juicyluv/astral/internal/server"
-	"github.com/juicyluv/astral/internal/store/sql"
+	"github.com/juicyluv/astral/internal/store/postgres"
 	"go.uber.org/zap"
 )
 
@@ -47,7 +47,7 @@ func main() {
 	}
 	logger.Info("connected to database")
 
-	store := sql.NewPostgres(conn)
+	store := postgres.NewPostgres(conn, logger)
 
 	server := server.NewServer(&config, logger, store)
 
