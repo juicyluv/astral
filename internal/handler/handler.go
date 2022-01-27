@@ -1,14 +1,24 @@
 package handler
 
-import "github.com/julienschmidt/httprouter"
+import (
+	"github.com/juicyluv/astral/internal/store"
+	"github.com/julienschmidt/httprouter"
+	"go.uber.org/zap"
+)
 
 type Handler struct {
 	router *httprouter.Router
+	logger *zap.SugaredLogger
+	store  store.Store
 }
 
-func NewHandler() *Handler {
+type jsonResponse map[string]interface{}
+
+func NewHandler(logger *zap.SugaredLogger, store store.Store) *Handler {
 	h := &Handler{
 		router: httprouter.New(),
+		logger: logger,
+		store:  store,
 	}
 
 	h.initRoutes()
