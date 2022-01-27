@@ -51,12 +51,6 @@ func (h *Handler) badRequestResponse(w http.ResponseWriter, r *http.Request, err
 	h.errorResponse(w, r, http.StatusBadRequest, err.Error())
 }
 
-// editConflictResponse sends a 409 Conflict response when the data race event occurred.
-func (h *Handler) editConflictResponse(w http.ResponseWriter, r *http.Request) {
-	message := "unable to update the record due to an edit conflict, please try again"
-	h.errorResponse(w, r, http.StatusConflict, message)
-}
-
 // recordNotFoundResponse sends a 404 Not Found response when record not found in storage.
 func (h *Handler) recordNotFoundResponse(w http.ResponseWriter, r *http.Request) {
 	h.errorResponse(w, r, http.StatusBadRequest, errNoRowsResponse.Error())
