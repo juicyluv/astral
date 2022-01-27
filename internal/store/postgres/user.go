@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/juicyluv/astral/internal/model"
@@ -105,8 +107,35 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*model.
 	return &user, nil
 }
 
-func (r *UserRepository) Update(ctx context.Context, user *model.UpdateUserDto) error {
-	return nil
+func (r *UserRepository) Update(ctx context.Context, userId int, user *model.UpdateUserDto) error {
+	values := make([]string, 0)
+	args := make([]interface{}, 0)
+	argId := 1
+
+	if user.Email != nil {
+		values = append(values, fmt.Sprintf("email=$%d", argId))
+		args = append(args, *user.Email)
+		argId++
+	}
+
+	if user.Username != nil {
+		values = append(values, fmt.Sprintf("username=$%d", argId))
+		args = append(args, *user.Username)
+		argId++
+	}
+
+	if user.Password != nil {
+		values = append(values, fmt.Sprintf("password=$%d", argId))
+		args = append(args, *user.Password)
+		argId++
+	}
+
+	valuesQuery := strings.Join(values, ", ")
+	query := fmt.Sprintf("UPDATE users SET %s WHERE user_id = $%d", valuesQuery, argId)
+	args = append(args, userId)
+
+	_, err := r.db.Exec(ctx, query, args...)
+	return err
 }
 
 func (r *UserRepository) Delete(ctx context.Context, userId int) error {
