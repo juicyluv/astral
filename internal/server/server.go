@@ -25,12 +25,12 @@ func NewServer(cfg *Config, logger *zap.SugaredLogger, store store.Store) *Serve
 			WriteTimeout:   cfg.WriteTimeout,
 			ReadTimeout:    cfg.ReadTimeout,
 			MaxHeaderBytes: cfg.MaxHeaderBytes,
-			Handler:        handler.NewHandler().GetRouter(),
+			Handler:        handler.NewHandler(logger, store).GetRouter(),
 		},
 	}
 }
 
 func (s *Server) Run() error {
-	s.logger.Infof("Server started on port %s\n", s.cfg.Port)
+	s.logger.Infof("Server started on port %s", s.cfg.Port)
 	return s.server.ListenAndServe()
 }
