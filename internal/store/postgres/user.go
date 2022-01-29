@@ -63,6 +63,7 @@ func (r *UserRepository) FindAll(ctx context.Context) ([]model.User, error) {
 		if err != nil {
 			return nil, err
 		}
+		user.ClearPassword()
 		users = append(users, user)
 	}
 
@@ -85,6 +86,8 @@ func (r *UserRepository) FindById(ctx context.Context, userId int) (*model.User,
 		return nil, err
 	}
 
+	user.ClearPassword()
+
 	return &user, nil
 }
 
@@ -93,12 +96,18 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*model.
 
 	query := `
 	SELECT user_id, username, email, 
-	TO_CHAR(registered_at, 'DD-MM-YYYY') as registered_at
+	TO_CHAR(registered_at, 'DD-MM-YYYY') as registered_at,
+	password
 	FROM users
 	WHERE email = $1`
 
 	err := r.db.QueryRow(ctx, query, email).Scan(
-		&user.Id, &user.Username, &user.Email, &user.RegisteredAt)
+		&user.Id,
+		&user.Username,
+		&user.Email,
+		&user.RegisteredAt,
+		&user.Password,
+	)
 
 	if err != nil {
 		return nil, err

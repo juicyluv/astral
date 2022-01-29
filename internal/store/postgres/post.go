@@ -178,3 +178,43 @@ func (r *PostRepository) Delete(ctx context.Context, postId int) error {
 
 	return nil
 }
+
+func (r *PostRepository) FindUserPosts(ctx context.Context, userId int) ([]model.Post, error) {
+	var posts []model.Post
+
+	query := `
+	SELECT 
+	p.post_id, p.title, p.content, 
+	TO_CHAR(p.created_at, 'DD-MM-YYYY') as created_at, 
+	TO_CHAR(p.updated_at, 'DD-MM-YYYY') as updated_at, 
+	u.user_id, u.username 
+	FROM posts p
+	INNER JOIN users u 
+	ON u.user_id = p.author_id
+	WHERE p.author_id = $1`
+
+	rows, err := r.db.Query(ctx, query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var post model.Post
+		err := rows.Scan(
+			&post.Id,
+			&post.Title,
+			&post.Content,
+			&post.CreatedAt,
+			&post.UpdatedAt,
+			&post.Author.Id,
+			&post.Author.Username,
+		)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	return posts, nil
+}
