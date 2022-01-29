@@ -59,3 +59,7 @@ func (h *Handler) recordNotFoundResponse(w http.ResponseWriter, r *http.Request)
 func (h *Handler) invalidRequestBodyResponse(w http.ResponseWriter, r *http.Request) {
 	h.errorResponse(w, r, http.StatusUnprocessableEntity, "invalid request body")
 }
+
+func (h *Handler) unauthorizedResponse(w http.ResponseWriter, r *http.Request) {
+	h.errorResponse(w, r, http.StatusUnauthorized, "you need to authorize to reach this resource")
+}
