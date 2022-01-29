@@ -19,6 +19,7 @@ type PostRepository interface {
 	Create(context.Context, *model.Post) (int, error)
 	FindAll(context.Context) ([]model.Post, error)
 	FindById(context.Context, int) (*model.Post, error)
+	FindUserPosts(context.Context, int) ([]model.Post, error)
 	Update(context.Context, int, *model.UpdatePostDto) error
 	Delete(context.Context, int) error
 }
