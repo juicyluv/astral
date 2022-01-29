@@ -12,13 +12,13 @@ import (
 func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 	token, err := h.GetTokenMetadata(r)
 	if err != nil {
-		h.unauthorizedResponse(w, r)
+		h.UnauthorizedResponse(w, r)
 		return
 	}
 
 	userId, err := h.FetchTokenDataFromRedis(token)
 	if err != nil {
-		h.unauthorizedResponse(w, r)
+		h.UnauthorizedResponse(w, r)
 		return
 	}
 
