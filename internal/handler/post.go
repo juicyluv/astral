@@ -10,12 +10,26 @@ import (
 )
 
 func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
+	token, err := h.GetTokenMetadata(r)
+	if err != nil {
+		h.unauthorizedResponse(w, r)
+		return
+	}
+
+	userId, err := h.FetchTokenDataFromRedis(token)
+	if err != nil {
+		h.unauthorizedResponse(w, r)
+		return
+	}
+
 	var post model.Post
 
 	if err := readJSON(w, r, &post); err != nil {
 		h.errorResponse(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	post.Author.Id = userId
 
 	if err := post.Validate(); err != nil {
 		h.errorResponse(w, r, http.StatusUnprocessableEntity, err.Error())
