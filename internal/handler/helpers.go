@@ -97,13 +97,13 @@ func readJSON(w http.ResponseWriter, r *http.Request, dest interface{}) error {
 }
 
 // readIdParam returns an id of the URL path on success.
-func readIdParam(r *http.Request) (int64, error) {
+func readIdParam(r *http.Request) (int, error) {
 	params := httprouter.ParamsFromContext(r.Context())
 	id, err := strconv.ParseInt(params.ByName("id"), 10, 64)
 	if err != nil || id < 1 {
 		return 0, errors.New("invalid id parameter")
 	}
-	return id, nil
+	return int(id), nil
 }
 
 // logError logs an error to logger output.
