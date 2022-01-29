@@ -13,7 +13,8 @@ type Config struct {
 	WriteTimeout   time.Duration
 	MaxHeaderBytes int
 
-	DbDSN string
+	DbDSN    string
+	RedisDSN string
 }
 
 func NewConfig(configPath string) Config {
@@ -23,5 +24,6 @@ func NewConfig(configPath string) Config {
 		WriteTimeout:   time.Second * time.Duration(viper.GetInt("http.writeTimeout")),
 		MaxHeaderBytes: viper.GetInt("http.maxHeaderBytes") << 20,
 		DbDSN:          os.Getenv("DB_DSN"),
+		RedisDSN:       os.Getenv("REDIS_DSN"),
 	}
 }
