@@ -31,7 +31,7 @@ func (p *Post) Validate() error {
 func (p *UpdatePostDto) Validate() error {
 	return validation.ValidateStruct(
 		p,
-		validation.Field(&p.Title, is.Alphanumeric, validation.Length(1, 200)),
+		validation.Field(&p.Title, is.ASCII, validation.Length(1, 200)),
 		validation.Field(&p.Content, is.ASCII, validation.Length(1, 0)),
 	)
 }
