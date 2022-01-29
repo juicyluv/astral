@@ -66,6 +66,22 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
+	token, err := h.GetTokenMetadata(r)
+	if err != nil {
+		h.UnauthorizedResponse(w, r)
+		return
+	}
+
+	deleted, err := h.RemoveUserTokenFromCache(token.AccessUuid)
+	if err != nil || deleted == 0 {
+		h.internalErrorResponse(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (h *Handler) saveTokenInformation(userId int, td *model.TokenDetails) error {
 	// Converting Unix to UTC
 	at := time.Unix(td.AtExpires, 0)
@@ -151,13 +167,11 @@ func (h *Handler) GetTokenMetadata(r *http.Request) (*model.TokenMetadata, error
 	if ok && token.Valid {
 		accessUuid, ok := claims["access_uuid"].(string)
 		if !ok {
-			fmt.Println("access")
 			return nil, err
 		}
 
 		userId, err := strconv.ParseInt(fmt.Sprintf("%.f", claims["user_id"]), 10, 64)
 		if err != nil {
-			fmt.Println("user id int")
 			return nil, err
 		}
 
@@ -183,4 +197,12 @@ func (h *Handler) FetchTokenDataFromRedis(details *model.TokenMetadata) (int, er
 	}
 
 	return userId, nil
+}
+
+func (h *Handler) RemoveUserTokenFromCache(uuid string) (int, error) {
+	deleted, err := h.redis.Del(uuid).Result()
+	if err != nil {
+		return 0, err
+	}
+	return int(deleted), nil
 }
