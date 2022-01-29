@@ -3,6 +3,7 @@ package model
 import (
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -26,6 +27,23 @@ func (u *User) Validate() error {
 		validation.Field(&u.Email, is.Email, validation.Required),
 		validation.Field(&u.Password, is.Alphanumeric, validation.Required),
 	)
+}
+
+func (u *User) HashPassword() error {
+	hashed, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	u.Password = string(hashed)
+	return err
+}
+
+func (u *User) ComparePassword(password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)) == nil
+}
+
+func (u *User) ClearPassword() {
+	u.Password = ""
 }
 
 func (u *UpdateUserDto) Validate() error {
