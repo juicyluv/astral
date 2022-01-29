@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/jackc/pgx/v4"
 	"github.com/juicyluv/astral/configs"
 	"github.com/juicyluv/astral/internal/server"
@@ -47,9 +48,17 @@ func main() {
 	}
 	logger.Info("connected to database")
 
+	redis := redis.NewClient(&redis.Options{
+		Addr: config.RedisDSN,
+	})
+
+	if _, err = redis.Ping().Result(); err != nil {
+		logger.Fatal(err)
+	}
+
 	store := postgres.NewPostgres(conn, logger)
 
-	server := server.NewServer(&config, logger, store)
+	server := server.NewServer(&config, logger, store, redis)
 
 	// Run the server
 	if err := server.Run(); err != nil {
