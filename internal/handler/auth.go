@@ -16,6 +16,9 @@ import (
 	"github.com/spf13/viper"
 )
 
+// login parses user input, validates it and retrieves the user information
+// from database. Then it creates a new pair of tokens and returns it
+// to the client
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	var login model.Auth
 
@@ -26,7 +29,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 
 	login.Email = strings.ToLower(login.Email)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
 	user, err := h.store.User().FindByEmail(ctx, login.Email)
@@ -46,7 +49,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 
 	user.ClearPassword()
 
-	tokens, err := h.CreateToken(user.Id)
+	tokens, err := h.createToken(user.Id)
 	if err != nil {
 		h.internalErrorResponse(w, r, err)
 		return
@@ -68,10 +71,11 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// logout removes user session from cache and makes user tokens invalid
 func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	token, err := h.getTokenMetadata(r)
 	if err != nil {
-		h.UnauthorizedResponse(w, r)
+		h.unauthorizedResponse(w, r)
 		return
 	}
 
@@ -84,7 +88,9 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) CreateToken(userId int) (*model.TokenDetails, error) {
+// createToken creates the jwt token and returns an error if something
+// went wrong
+func (h *Handler) createToken(userId int) (*model.TokenDetails, error) {
 	// Access Token secret key
 	accessSecret := os.Getenv("JWT_SECRET")
 	if accessSecret == "" {
@@ -153,6 +159,7 @@ func (h *Handler) CreateToken(userId int) (*model.TokenDetails, error) {
 	return &td, nil
 }
 
+// saveTokenInformation saves token information in the cache
 func (h *Handler) saveTokenInformation(userId int, td *model.TokenDetails) error {
 	// Converting Unix to UTC
 	at := time.Unix(td.AtExpires, 0)
@@ -174,6 +181,7 @@ func (h *Handler) saveTokenInformation(userId int, td *model.TokenDetails) error
 	return nil
 }
 
+// extractToken extracts token from Authorization request header
 func (h *Handler) extractToken(r *http.Request) (string, error) {
 	err := errors.New("invalid authorization header")
 
@@ -190,6 +198,8 @@ func (h *Handler) extractToken(r *http.Request) (string, error) {
 	return s[1], nil
 }
 
+// verifyToken checks whether token has HMAC encrypt algorithm
+// and parses the given token
 func (h *Handler) verifyToken(r *http.Request) (*jwt.Token, error) {
 	tokenString, err := h.extractToken(r)
 	if err != nil {
@@ -270,6 +280,7 @@ func (h *Handler) fetchTokenDataFromRedis(details *model.TokenMetadata) (int, er
 	return userId, nil
 }
 
+// removeUserTokenFromCache deleted the user information from cache
 func (h *Handler) removeUserTokenFromCache(uuid string) (int, error) {
 	deleted, err := h.redis.Del(uuid).Result()
 	if err != nil {
@@ -278,6 +289,7 @@ func (h *Handler) removeUserTokenFromCache(uuid string) (int, error) {
 	return int(deleted), nil
 }
 
+// refreshToken handles retrieving a new pair of tokens
 func (h *Handler) refreshToken(w http.ResponseWriter, r *http.Request) {
 	type input struct {
 		RefreshToken string `json:"refreshToken"`
@@ -306,7 +318,7 @@ func (h *Handler) refreshToken(w http.ResponseWriter, r *http.Request) {
 
 	// Check whether token is valid
 	if !token.Valid {
-		h.UnauthorizedResponse(w, r)
+		h.unauthorizedResponse(w, r)
 		return
 	}
 
@@ -339,7 +351,7 @@ func (h *Handler) refreshToken(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Create a new pair of tokens
-		ts, err := h.CreateToken(int(userId))
+		ts, err := h.createToken(int(userId))
 		if err != nil {
 			h.errorResponse(w, r, http.StatusForbidden, err.Error())
 			return
