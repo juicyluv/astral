@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/juicyluv/astral/internal/model"
 )
@@ -12,13 +11,13 @@ import (
 func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 	token, err := h.getTokenMetadata(r)
 	if err != nil {
-		h.UnauthorizedResponse(w, r)
+		h.unauthorizedResponse(w, r)
 		return
 	}
 
 	userId, err := h.fetchTokenDataFromRedis(token)
 	if err != nil {
-		h.UnauthorizedResponse(w, r)
+		h.unauthorizedResponse(w, r)
 		return
 	}
 
@@ -36,7 +35,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
 	postId, err := h.store.Post().Create(ctx, &post)
@@ -52,7 +51,7 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) listPost(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
 	posts, err := h.store.Post().FindAll(ctx)
@@ -72,7 +71,7 @@ func (h *Handler) listPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
 	postId, err := readIdParam(r)
@@ -98,7 +97,7 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updatePost(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
 	postId, err := readIdParam(r)
@@ -149,7 +148,7 @@ func (h *Handler) updatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) deletePost(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
 	postId, err := readIdParam(r)
