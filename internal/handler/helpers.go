@@ -12,6 +12,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// health is helper handler which will return 200 OK status.
+// It is used to verify whether the server is running.
 func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("I'm fine"))
