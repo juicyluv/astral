@@ -107,7 +107,7 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 
 	userId, err := readIdParam(r)
 	if err != nil {
-		h.errorResponse(w, r, http.StatusBadRequest, err)
+		h.errorResponse(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 

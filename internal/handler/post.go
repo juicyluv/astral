@@ -10,13 +10,13 @@ import (
 )
 
 func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
-	token, err := h.GetTokenMetadata(r)
+	token, err := h.getTokenMetadata(r)
 	if err != nil {
 		h.UnauthorizedResponse(w, r)
 		return
 	}
 
-	userId, err := h.FetchTokenDataFromRedis(token)
+	userId, err := h.fetchTokenDataFromRedis(token)
 	if err != nil {
 		h.UnauthorizedResponse(w, r)
 		return
@@ -103,7 +103,7 @@ func (h *Handler) updatePost(w http.ResponseWriter, r *http.Request) {
 
 	postId, err := readIdParam(r)
 	if err != nil {
-		h.errorResponse(w, r, http.StatusBadRequest, err)
+		h.errorResponse(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
