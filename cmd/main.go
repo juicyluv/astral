@@ -55,6 +55,7 @@ func main() {
 	if _, err = redis.Ping().Result(); err != nil {
 		logger.Fatal(err)
 	}
+	logger.Info("cache has been connected")
 
 	store := postgres.NewPostgres(conn, logger)
 
