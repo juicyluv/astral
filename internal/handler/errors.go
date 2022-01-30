@@ -13,7 +13,8 @@ var (
 	errNoRowsResponse = errors.New("record not found")
 )
 
-// errorResponse logs an error and sends a JSON response with a given status code.
+// errorResponse logs an error and sends
+// a JSON response with a given status code.
 func (h *Handler) errorResponse(w http.ResponseWriter, r *http.Request, statusCode int, message string) {
 	msg := jsonResponse{"error": message}
 
@@ -23,8 +24,8 @@ func (h *Handler) errorResponse(w http.ResponseWriter, r *http.Request, statusCo
 	}
 }
 
-// internalErrorResponse logs the error message and sends a 500 Internal Server Error by using
-// errorResponse helper function.
+// internalErrorResponse logs the error message and sends
+// a 500 Internal Server Error by using errorResponse helper function.
 func (h *Handler) internalErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
 	h.logError(err)
 
@@ -51,15 +52,18 @@ func (h *Handler) badRequestResponse(w http.ResponseWriter, r *http.Request, err
 	h.errorResponse(w, r, http.StatusBadRequest, err.Error())
 }
 
-// recordNotFoundResponse sends a 404 Not Found response when record not found in storage.
+// recordNotFoundResponse sends a 404 Not Found response
+// when record not found in storage.
 func (h *Handler) recordNotFoundResponse(w http.ResponseWriter, r *http.Request) {
 	h.errorResponse(w, r, http.StatusBadRequest, errNoRowsResponse.Error())
 }
 
+// invalidRequestBodyResponse returns 422 Unprocesssable Entity response
 func (h *Handler) invalidRequestBodyResponse(w http.ResponseWriter, r *http.Request) {
 	h.errorResponse(w, r, http.StatusUnprocessableEntity, "invalid request body")
 }
 
-func (h *Handler) UnauthorizedResponse(w http.ResponseWriter, r *http.Request) {
+// unauthorizedResponse returns 401 Unauthorized response
+func (h *Handler) unauthorizedResponse(w http.ResponseWriter, r *http.Request) {
 	h.errorResponse(w, r, http.StatusUnauthorized, "you need to authorize to reach this resource")
 }
