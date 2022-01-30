@@ -14,7 +14,7 @@ var (
 )
 
 // errorResponse logs an error and sends a JSON response with a given status code.
-func (h *Handler) errorResponse(w http.ResponseWriter, r *http.Request, statusCode int, message interface{}) {
+func (h *Handler) errorResponse(w http.ResponseWriter, r *http.Request, statusCode int, message string) {
 	msg := jsonResponse{"error": message}
 
 	if err := sendJSON(w, msg, statusCode, nil); err != nil {
