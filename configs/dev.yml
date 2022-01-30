@@ -4,7 +4,6 @@ http:
   readTimeout: 30   # Seconds
   writeTimeout: 30  # Seconds
 
-server:
-  auth:
-    tokenExpTime: 15
-    refreshExpTime: 7
+auth:
+  tokenExpTime: 15  # Minutes
+  refreshExpTime: 7 # Days
