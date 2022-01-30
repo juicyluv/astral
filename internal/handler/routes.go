@@ -13,6 +13,7 @@ func (h *Handler) initRoutes() {
 	h.router.HandlerFunc(http.MethodPost, "/api/auth/signin", h.login)
 	h.router.HandlerFunc(http.MethodPost, "/api/auth/signup", h.createUser)
 	h.router.HandlerFunc(http.MethodGet, "/api/auth/signout", h.RequireAuth(h.logout))
+	h.router.HandlerFunc(http.MethodPost, "/api/auth/refresh", h.refreshToken)
 
 	// Users
 	h.router.HandlerFunc(http.MethodGet, "/api/users", h.listUser)
