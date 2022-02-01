@@ -21,6 +21,7 @@ func (h *Handler) initRoutes() {
 	h.router.HandlerFunc(http.MethodPut, "/api/users/:id", h.RequireAuth(h.updateUser))
 	h.router.HandlerFunc(http.MethodDelete, "/api/users/:id", h.RequireAuth(h.deleteUser))
 	h.router.HandlerFunc(http.MethodGet, "/api/users/:id/posts", h.listUserPosts)
+	h.router.HandlerFunc(http.MethodGet, "/api/confirmation", h.confirmEmail)
 
 	// Posts
 	h.router.HandlerFunc(http.MethodGet, "/api/posts", h.listPost)
