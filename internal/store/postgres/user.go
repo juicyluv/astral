@@ -47,7 +47,7 @@ func (r *UserRepository) FindAll(ctx context.Context) ([]model.User, error) {
 	var users []model.User
 
 	query := `
-	SELECT user_id, username, email, 
+	SELECT user_id, username, email, is_verified,
 	TO_CHAR(registered_at, 'DD-MM-YYYY') as registered_at
 	FROM users`
 
@@ -59,7 +59,13 @@ func (r *UserRepository) FindAll(ctx context.Context) ([]model.User, error) {
 
 	for rows.Next() {
 		var user model.User
-		err := rows.Scan(&user.Id, &user.Username, &user.Email, &user.RegisteredAt)
+		err := rows.Scan(
+			&user.Id,
+			&user.Username,
+			&user.Email,
+			&user.IsVerified,
+			&user.RegisteredAt,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -74,13 +80,18 @@ func (r *UserRepository) FindById(ctx context.Context, userId int) (*model.User,
 	var user model.User
 
 	query := `
-	SELECT user_id, username, email, 
+	SELECT user_id, username, email, is_verified, 
 	TO_CHAR(registered_at, 'DD-MM-YYYY') as registered_at
 	FROM users
 	WHERE user_id = $1`
 
 	err := r.db.QueryRow(ctx, query, userId).Scan(
-		&user.Id, &user.Username, &user.Email, &user.RegisteredAt)
+		&user.Id,
+		&user.Username,
+		&user.Email,
+		&user.IsVerified,
+		&user.RegisteredAt,
+	)
 
 	if err != nil {
 		return nil, err
@@ -95,7 +106,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*model.
 	var user model.User
 
 	query := `
-	SELECT user_id, username, email, 
+	SELECT user_id, username, email, is_verified,
 	TO_CHAR(registered_at, 'DD-MM-YYYY') as registered_at,
 	password
 	FROM users
@@ -105,6 +116,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*model.
 		&user.Id,
 		&user.Username,
 		&user.Email,
+		&user.IsVerified,
 		&user.RegisteredAt,
 		&user.Password,
 	)
@@ -139,6 +151,12 @@ func (r *UserRepository) Update(ctx context.Context, userId int, user *model.Upd
 		argId++
 	}
 
+	if user.IsVerified != nil {
+		values = append(values, fmt.Sprintf("is_verified=$%d", argId))
+		args = append(args, *user.IsVerified)
+		argId++
+	}
+
 	valuesQuery := strings.Join(values, ", ")
 	query := fmt.Sprintf("UPDATE users SET %s WHERE user_id = $%d", valuesQuery, argId)
 	args = append(args, userId)
@@ -158,4 +176,15 @@ func (r *UserRepository) Delete(ctx context.Context, userId int) error {
 	}
 
 	return nil
+}
+
+func (r *UserRepository) ConfirmEmail(ctx context.Context, userId int) error {
+	query := `
+	UPDATE users 
+	SET is_verified = true
+	WHERE user_id = $1`
+
+	_, err := r.db.Exec(ctx, query, userId)
+
+	return err
 }
