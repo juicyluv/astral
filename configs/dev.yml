@@ -8,3 +8,9 @@ http:
 auth:
   tokenExpTime:   15  # Minutes
   refreshExpTime:  7  # Days
+
+mail:
+  host:         smtp.gmail.com
+  port:         "587"
+  subject:      "Email Verification"
+  tokenExpTime: 30 # Days
