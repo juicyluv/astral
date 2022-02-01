@@ -29,7 +29,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 
 	login.Email = strings.ToLower(login.Email)
 
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
 	user, err := h.store.User().FindByEmail(ctx, login.Email)
