@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
+	"github.com/juicyluv/astral/internal/mail"
 	"github.com/juicyluv/astral/internal/model"
 )
 
@@ -22,7 +24,7 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
 	found, err := h.store.User().FindByEmail(ctx, user.Email)
@@ -48,6 +50,20 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token, err := h.createEmailToken(userId)
+	if err != nil {
+		h.internalErrorResponse(w, r, errors.New("could not create email token"))
+		return
+	}
+
+	message := "Hi, verify your email, please. Your token: " + token
+
+	err = mail.SendEmail(strings.ToLower(user.Email), message)
+	if err != nil {
+		h.internalErrorResponse(w, r, errors.New("could not send verification email"))
+		return
+	}
+
 	err = sendJSON(w, jsonResponse{"id": userId}, http.StatusOK, nil)
 	if err != nil {
 		h.internalErrorResponse(w, r, err)
@@ -55,7 +71,7 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) listUser(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
 	users, err := h.store.User().FindAll(ctx)
@@ -75,7 +91,7 @@ func (h *Handler) listUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
 	userId, err := readIdParam(r)
@@ -101,7 +117,7 @@ func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
 	userId, err := readIdParam(r)
@@ -139,7 +155,7 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
 	userId, err := readIdParam(r)
@@ -165,7 +181,7 @@ func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) listUserPosts(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
 	userId, err := readIdParam(r)
