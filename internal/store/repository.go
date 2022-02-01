@@ -13,6 +13,7 @@ type UserRepository interface {
 	FindByEmail(context.Context, string) (*model.User, error)
 	Update(context.Context, int, *model.UpdateUserDto) error
 	Delete(context.Context, int) error
+	ConfirmEmail(context.Context, int) error
 }
 
 type PostRepository interface {
