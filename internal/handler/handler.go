@@ -10,15 +10,13 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	requestTimeout = time.Duration(viper.GetInt("http.requestTimeout")) * time.Second
-)
-
 type Handler struct {
 	router *httprouter.Router
 	logger *zap.SugaredLogger
 	redis  *redis.Client
 	store  store.Store
+
+	requestTimeout time.Duration
 }
 
 type jsonResponse map[string]interface{}
@@ -29,6 +27,8 @@ func NewHandler(logger *zap.SugaredLogger, store store.Store, redis *redis.Clien
 		logger: logger,
 		store:  store,
 		redis:  redis,
+
+		requestTimeout: time.Duration(viper.GetInt("http.requestTimeout")) * time.Second,
 	}
 
 	h.initRoutes()
