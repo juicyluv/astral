@@ -12,12 +12,14 @@ type User struct {
 	Email        string `json:"email,omitempty"`
 	RegisteredAt string `json:"registered_at,omitempty"`
 	Password     string `json:"password,omitempty"`
+	IsVerified   bool   `json:"verified"`
 }
 
 type UpdateUserDto struct {
-	Username *string `json:"username"`
-	Email    *string `json:"email"`
-	Password *string `json:"password"`
+	Username   *string `json:"username"`
+	Email      *string `json:"email"`
+	Password   *string `json:"password"`
+	IsVerified *bool   `json:"verified"`
 }
 
 func (u *User) Validate() error {
