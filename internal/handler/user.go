@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"text/template"
@@ -59,14 +60,14 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Send email message to the user
 	go func(logger *zap.SugaredLogger, username, email, token string) {
 		subject := viper.GetString("mail.subject")
 		filepath := "./internal/mail/templates/confirm_request.html"
 		t := template.Must(template.ParseFiles(filepath))
 
-		b := make([]byte, 0)
+		b := []byte{}
 		buf := bytes.NewBuffer(b)
-
 		t.ExecuteTemplate(buf, "confirm_request.html", struct {
 			Username    string
 			ConfirmLink string
@@ -75,9 +76,23 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 			ConfirmLink: "http://localhost:8080/api/confirmation?token=" + token,
 		})
 
-		err = mail.SendEmail(email, subject, mail.MimeHTML, buf.String())
+		var messageBuffer bytes.Buffer
+		encoder := json.NewEncoder(&messageBuffer)
+		err := encoder.Encode(mail.Message{
+			EmailTo: email,
+			Subject: subject,
+			Mime:    mail.MimeHTML,
+			Message: buf.Bytes(),
+		})
 		if err != nil {
-			logger.Infof("email was not sent: %v", err)
+			logger.Error(err)
+			return
+		}
+
+		err = h.queue.Dispatch(messageBuffer.Bytes())
+		if err != nil {
+			logger.Errorf("could not send message to the queue: %v", err)
+			return
 		}
 
 		logger.Infof("email was sent to %s", email)
