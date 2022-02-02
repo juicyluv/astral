@@ -12,6 +12,7 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/jackc/pgx/v4"
 	"github.com/juicyluv/astral/configs"
+	"github.com/juicyluv/astral/internal/queue"
 	"github.com/juicyluv/astral/internal/server"
 	"github.com/juicyluv/astral/internal/store/postgres"
 	"go.uber.org/zap"
@@ -61,9 +62,15 @@ func main() {
 	}
 	logger.Info("cache has been connected")
 
+	queue, err := queue.NewQueue(logger, queue.NewConfig())
+	if err != nil {
+		logger.Fatal(err)
+	}
+	logger.Info("queue has been connected")
+
 	store := postgres.NewPostgres(conn, logger)
 
-	server := server.NewServer(&config, logger, store, redis)
+	server := server.NewServer(&config, logger, store, redis, queue)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -85,10 +92,17 @@ func main() {
 	if err := store.Close(context.Background()); err != nil {
 		logger.Errorf("error occured on db connection close: %s", err.Error())
 	}
+	logger.Info("database has been closed")
 
 	if err := redis.Close(); err != nil {
 		logger.Errorf("error occured on redis connection close: %s", err.Error())
 	}
+	logger.Info("redis has been closed")
+
+	if err := queue.Close(); err != nil {
+		logger.Errorf("error occured on queue connection close: %s", err.Error())
+	}
+	logger.Info("queue has been closed")
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		logger.Fatalf("shutdown: %w", err)
