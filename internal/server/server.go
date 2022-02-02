@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-redis/redis/v7"
 	"github.com/juicyluv/astral/internal/handler"
+	"github.com/juicyluv/astral/internal/queue"
 	"github.com/juicyluv/astral/internal/store"
 	"go.uber.org/zap"
 )
@@ -17,7 +18,7 @@ type Server struct {
 	db     store.Store
 }
 
-func NewServer(cfg *Config, logger *zap.SugaredLogger, store store.Store, redis *redis.Client) *Server {
+func NewServer(cfg *Config, logger *zap.SugaredLogger, store store.Store, redis *redis.Client, queue *queue.Queue) *Server {
 	return &Server{
 		cfg:    cfg,
 		logger: logger,
@@ -27,7 +28,7 @@ func NewServer(cfg *Config, logger *zap.SugaredLogger, store store.Store, redis 
 			WriteTimeout:   cfg.WriteTimeout,
 			ReadTimeout:    cfg.ReadTimeout,
 			MaxHeaderBytes: cfg.MaxHeaderBytes,
-			Handler:        handler.NewHandler(logger, store, redis).GetRouter(),
+			Handler:        handler.NewHandler(logger, store, redis, queue).GetRouter(),
 		},
 	}
 }
