@@ -1,6 +1,8 @@
 package postgres
 
 import (
+	"context"
+
 	"github.com/jackc/pgx/v4"
 	"github.com/juicyluv/astral/internal/store"
 	"go.uber.org/zap"
@@ -26,4 +28,8 @@ func (s *Store) User() store.UserRepository {
 
 func (s *Store) Post() store.PostRepository {
 	return s.post
+}
+
+func (s *Store) Close(ctx context.Context) error {
+	return s.db.Close(ctx)
 }
