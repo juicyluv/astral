@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-redis/redis/v7"
@@ -34,4 +35,8 @@ func NewServer(cfg *Config, logger *zap.SugaredLogger, store store.Store, redis 
 func (s *Server) Run() error {
 	s.logger.Infof("Server started on port %s", s.cfg.Port)
 	return s.server.ListenAndServe()
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	return s.server.Shutdown(ctx)
 }
