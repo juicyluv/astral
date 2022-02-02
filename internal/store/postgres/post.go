@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v4"
+	"github.com/juicyluv/astral/internal/handler/filter"
 	"github.com/juicyluv/astral/internal/model"
 	"go.uber.org/zap"
 )
@@ -65,7 +66,7 @@ func (r *PostRepository) Create(ctx context.Context, post *model.Post) (int, err
 	return post.Id, nil
 }
 
-func (r *PostRepository) FindAll(ctx context.Context) ([]model.Post, error) {
+func (r *PostRepository) FindAll(ctx context.Context, filter *filter.PostFilter) ([]model.Post, error) {
 	var posts []model.Post
 
 	query := `
@@ -76,9 +77,11 @@ func (r *PostRepository) FindAll(ctx context.Context) ([]model.Post, error) {
 	u.user_id, u.username 
 	FROM posts p
 	INNER JOIN users u 
-	ON u.user_id = p.author_id`
+	ON u.user_id = p.author_id
+	WHERE  (LOWER(p.title) = LOWER($1) OR $1 = '')
+	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, filter.Title)
 	if err != nil {
 		return nil, err
 	}

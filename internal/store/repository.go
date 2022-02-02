@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	"github.com/juicyluv/astral/internal/handler/filter"
 	"github.com/juicyluv/astral/internal/model"
 )
 
@@ -18,7 +19,7 @@ type UserRepository interface {
 
 type PostRepository interface {
 	Create(context.Context, *model.Post) (int, error)
-	FindAll(context.Context) ([]model.Post, error)
+	FindAll(context.Context, *filter.PostFilter) ([]model.Post, error)
 	FindById(context.Context, int) (*model.Post, error)
 	FindUserPosts(context.Context, int) ([]model.Post, error)
 	Update(context.Context, int, *model.UpdatePostDto) error
