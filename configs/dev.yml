@@ -14,3 +14,10 @@ mail:
   port:         "587"
   subject:      "Email Verification"
   tokenExpTime: 30 # Days
+
+queue:
+  user: guest
+  password: guest
+  host: localhost
+  port: 5672
+  name: Astral
