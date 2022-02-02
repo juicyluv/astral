@@ -12,6 +12,13 @@ var (
 	MimeHTML = "text/html"
 )
 
+type Message struct {
+	EmailTo string
+	Subject string
+	Mime    string
+	Message []byte
+}
+
 func SendEmail(to, subject, mimeType, body string) error {
 	from := os.Getenv("EMAIL_ADDRESS")
 	password := os.Getenv("EMAIL_PASSWORD")
