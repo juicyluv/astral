@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/juicyluv/astral/internal/handler/filter"
 	"github.com/juicyluv/astral/internal/model"
 )
 
@@ -51,10 +52,13 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) listPost(w http.ResponseWriter, r *http.Request) {
+	title := r.URL.Query().Get("title")
+	filter := filter.PostFilter{Title: title}
+
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
 
-	posts, err := h.store.Post().FindAll(ctx)
+	posts, err := h.store.Post().FindAll(ctx, &filter)
 	if err != nil {
 		if errors.Is(err, errNoRows) {
 			h.recordNotFoundResponse(w, r)
