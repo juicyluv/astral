@@ -4,6 +4,10 @@ import (
 	"context"
 	"flag"
 	"log"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/jackc/pgx/v4"
@@ -61,8 +65,46 @@ func main() {
 
 	server := server.NewServer(&config, logger, store, redis)
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	// Run the server
-	if err := server.Run(); err != nil {
-		logger.Fatal(err)
+	go func() {
+		if err := server.Run(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal(err)
+		}
+	}()
+
+	<-ctx.Done()
+
+	logger.Info("shutting down server gracefully")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := store.Close(context.Background()); err != nil {
+		logger.Errorf("error occured on db connection close: %s", err.Error())
+	}
+
+	if err := redis.Close(); err != nil {
+		logger.Errorf("error occured on redis connection close: %s", err.Error())
+	}
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		logger.Fatalf("shutdown: %w", err)
+	}
+
+	longShutdown := make(chan struct{}, 1)
+
+	go func() {
+		time.Sleep(3 * time.Second)
+		longShutdown <- struct{}{}
+	}()
+
+	select {
+	case <-shutdownCtx.Done():
+		logger.Errorf("server shutdown: %w", ctx.Err())
+	case <-longShutdown:
+		logger.Info("server has been shutted down")
 	}
 }
