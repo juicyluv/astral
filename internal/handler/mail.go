@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juicyluv/astral/internal/mail"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 func (h *Handler) confirmEmail(w http.ResponseWriter, r *http.Request) {
@@ -66,12 +68,21 @@ func (h *Handler) confirmEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message := "You successfully verified your account."
-	err = mail.SendEmail(strings.ToLower(user.Email), message)
-	if err != nil {
-		h.internalErrorResponse(w, r, errors.New("could not send email"))
-		return
-	}
+	go func(logger *zap.SugaredLogger, email string) {
+		subject := viper.GetString("mail.subject")
+		buf, err := ioutil.ReadFile("./internal/mail/templates/confirm_success.html")
+		if err != nil {
+			h.logger.Error("cannot read html template")
+			return
+		}
+
+		err = mail.SendEmail(email, subject, mail.MimeHTML, string(buf))
+		if err != nil {
+			logger.Infof("email was not sent: %v", err)
+		}
+
+		logger.Infof("email was sent to %s", email)
+	}(h.logger, strings.ToLower(user.Email))
 
 	w.WriteHeader(http.StatusOK)
 }

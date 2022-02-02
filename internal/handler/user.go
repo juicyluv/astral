@@ -1,13 +1,16 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"net/http"
-	"strings"
+	"text/template"
 
 	"github.com/juicyluv/astral/internal/mail"
 	"github.com/juicyluv/astral/internal/model"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
@@ -56,13 +59,29 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message := "Hi, verify your email, please. Your token: " + token
+	go func(logger *zap.SugaredLogger, username, email, token string) {
+		subject := viper.GetString("mail.subject")
+		filepath := "./internal/mail/templates/confirm_request.html"
+		t := template.Must(template.ParseFiles(filepath))
 
-	err = mail.SendEmail(strings.ToLower(user.Email), message)
-	if err != nil {
-		h.internalErrorResponse(w, r, errors.New("could not send verification email"))
-		return
-	}
+		b := make([]byte, 0)
+		buf := bytes.NewBuffer(b)
+
+		t.ExecuteTemplate(buf, "confirm_request.html", struct {
+			Username    string
+			ConfirmLink string
+		}{
+			Username:    username,
+			ConfirmLink: "http://localhost:8080/api/confirmation?token=" + token,
+		})
+
+		err = mail.SendEmail(email, subject, mail.MimeHTML, buf.String())
+		if err != nil {
+			logger.Infof("email was not sent: %v", err)
+		}
+
+		logger.Infof("email was sent to %s", email)
+	}(h.logger, user.Username, user.Email, token)
 
 	err = sendJSON(w, jsonResponse{"id": userId}, http.StatusOK, nil)
 	if err != nil {
