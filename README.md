@@ -7,6 +7,7 @@ This is just learning project. Go http server application.
 - REST API
 - PostgreSQL
 - RabbitMQ
+- Redis
 - Clean Architecture
 - Graceful Shutdown
 - Migrations
