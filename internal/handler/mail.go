@@ -17,6 +17,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// confirmEmail will parse URL to get confirmation token,
+// then parses token to verify if it expired and get user id,
+// and then updates the user as verified
 func (h *Handler) confirmEmail(w http.ResponseWriter, r *http.Request) {
 	errInvalidToken := errors.New("invalid token")
 
@@ -68,6 +71,7 @@ func (h *Handler) confirmEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Send email that user has been validated
 	go func(logger *zap.SugaredLogger, email string) {
 		subject := viper.GetString("mail.subject")
 		buf, err := ioutil.ReadFile("./internal/mail/templates/confirm_success.html")

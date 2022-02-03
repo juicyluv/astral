@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Handler handles http requests
 type Handler struct {
 	router *httprouter.Router
 	logger *zap.SugaredLogger
@@ -21,8 +22,10 @@ type Handler struct {
 	requestTimeout time.Duration
 }
 
+// jsonResponse is a map to send JSON response
 type jsonResponse map[string]interface{}
 
+// NewHandler will return a pointer to the Handler instance
 func NewHandler(logger *zap.SugaredLogger, store store.Store, redis *redis.Client, queue *queue.Queue) *Handler {
 	h := &Handler{
 		router: httprouter.New(),

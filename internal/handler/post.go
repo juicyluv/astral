@@ -9,6 +9,7 @@ import (
 	"github.com/juicyluv/astral/internal/model"
 )
 
+// createPost will parse request body and create a new post
 func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 	token, err := h.getTokenMetadata(r)
 	if err != nil {
@@ -51,6 +52,8 @@ func (h *Handler) createPost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// listPost will parse URL query to filter posts and returns a list of
+// required posts
 func (h *Handler) listPost(w http.ResponseWriter, r *http.Request) {
 	title := r.URL.Query().Get("title")
 	filter := filter.PostFilter{Title: title}
@@ -74,6 +77,7 @@ func (h *Handler) listPost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// getPost will parse post id from URL and return post with this id
 func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
@@ -100,6 +104,8 @@ func (h *Handler) getPost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// updatePost will parse request body and if everything is OK
+// will update the post record
 func (h *Handler) updatePost(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
@@ -151,6 +157,7 @@ func (h *Handler) updatePost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// deletePost will parse post id from URL and delete record with this id
 func (h *Handler) deletePost(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()

@@ -14,6 +14,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// createUser will parse request body and create the user record.
+// Also creates a pair of tokens, then returns it as a response.
 func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 	var user model.User
 
@@ -104,6 +106,7 @@ func (h *Handler) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// listUser will response a user list
 func (h *Handler) listUser(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
@@ -124,6 +127,7 @@ func (h *Handler) listUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// getUser will parse user id from URL query parameters and return the user with given id
 func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
@@ -150,6 +154,7 @@ func (h *Handler) getUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// updateUser will parse the id from URL query parameters and update the user with given id
 func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
@@ -188,6 +193,7 @@ func (h *Handler) updateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// deleteUser will parse the id from URL query parameters and delete the user with given id
 func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()
@@ -214,6 +220,8 @@ func (h *Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// listUserPosts will parse user id from URL query parameters
+// and return posts which belong to this user
 func (h *Handler) listUserPosts(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), h.requestTimeout)
 	defer cancel()

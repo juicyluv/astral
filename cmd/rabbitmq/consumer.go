@@ -21,12 +21,14 @@ func main() {
 	dsn := fmt.Sprintf("amqp://%s:%s@%s:%s/",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port)
 
+	// Create tcp connection with rabbitmq
 	conn, err := amqp.Dial(dsn)
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
 
+	// Create a channel
 	ch, err := conn.Channel()
 	if err != nil {
 		panic(err)
@@ -57,6 +59,7 @@ func main() {
 				fmt.Println("could not deserialize message: ", err.Error())
 			}
 
+			// Send user email
 			err = mail.SendEmail(msg.EmailTo, msg.Subject, msg.Mime, string(msg.Message))
 			if err != nil {
 				fmt.Printf("Could not send message to %s. Error: %s\n", msg.EmailTo, err.Error())
@@ -70,6 +73,8 @@ func main() {
 	<-forever
 }
 
+// DeserializeMessage receives a byte slice and tries to decode
+// it to the Message instance.
 func DeserializeMessage(b []byte) (mail.Message, error) {
 	var msg mail.Message
 	buf := bytes.NewBuffer(b)

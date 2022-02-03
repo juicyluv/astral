@@ -53,25 +53,31 @@ func main() {
 	}
 	logger.Info("connected to database")
 
+	// Redis connection
 	redis := redis.NewClient(&redis.Options{
 		Addr: config.RedisDSN,
 	})
 
+	// Ping Redis
 	if _, err = redis.Ping().Result(); err != nil {
 		logger.Fatal(err)
 	}
 	logger.Info("cache has been connected")
 
+	// Create queue instance
 	queue, err := queue.NewQueue(logger, queue.NewConfig())
 	if err != nil {
 		logger.Fatal(err)
 	}
 	logger.Info("queue has been connected")
 
+	// Create Postgres repository
 	store := postgres.NewPostgres(conn, logger)
 
+	// Create and configure http server
 	server := server.NewServer(&config, logger, store, redis, queue)
 
+	// OS Signal Notification Context
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -82,6 +88,8 @@ func main() {
 		}
 	}()
 
+	// Graceful Shutdown
+	// When any signal has been sent, shut down the server
 	<-ctx.Done()
 
 	logger.Info("shutting down server gracefully")
@@ -89,6 +97,7 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// Close all connections
 	if err := store.Close(context.Background()); err != nil {
 		logger.Errorf("error occured on db connection close: %s", err.Error())
 	}
